@@ -43,6 +43,7 @@ class HrDashboard extends Component
 
         $claim->update([
             'status' => 'paid',
+            'paid_by' => auth()->id(),
             'paid_at' => now(),
         ]);
 
