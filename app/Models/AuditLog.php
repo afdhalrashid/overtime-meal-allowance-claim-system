@@ -52,9 +52,9 @@ class AuditLog extends Model
         string $auditableType,
         int $auditableId,
         string $event,
-        array $oldValues = null,
-        array $newValues = null,
-        string $notes = null
+        array $oldValues,
+        array $newValues,
+        string $notes
     ): void {
         static::create([
             'auditable_type' => $auditableType,

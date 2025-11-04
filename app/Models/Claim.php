@@ -69,6 +69,16 @@ class Claim extends Model
     protected static function booted()
     {
         static::created(function (Claim $claim) {
+            // Log audit trail for claim creation
+            AuditLog::log(
+                Claim::class,
+                $claim->id,
+                'created',
+                [],
+                $claim->toArray(),
+                "Claim {$claim->claim_number} created by {$claim->user->name}"
+            );
+
             // Notify approvers when a new claim is submitted with pending_approval status
             if ($claim->status === 'pending_approval') {
                 $approvers = User::where('role', 'approver')
@@ -82,6 +92,36 @@ class Claim extends Model
         });
 
         static::updated(function (Claim $claim) {
+            // Log audit trail for claim updates
+            if ($claim->isDirty()) {
+                $oldValues = [];
+                $newValues = [];
+                $changes = [];
+
+                foreach ($claim->getDirty() as $field => $newValue) {
+                    $oldValue = $claim->getOriginal($field);
+                    $oldValues[$field] = $oldValue;
+                    $newValues[$field] = $newValue;
+
+                    if ($field === 'status') {
+                        $changes[] = "status changed from '{$oldValue}' to '{$newValue}'";
+                    } else {
+                        $changes[] = "'{$field}' updated";
+                    }
+                }
+
+                $notes = "Claim {$claim->claim_number}: " . implode(', ', $changes) . " by " . (auth()->user()->name ?? 'System');
+
+                AuditLog::log(
+                    Claim::class,
+                    $claim->id,
+                    'updated',
+                    $oldValues,
+                    $newValues,
+                    $notes
+                );
+            }
+
             // Notify user when claim status changes from pending_approval
             if ($claim->isDirty('status') && $claim->getOriginal('status') === 'pending_approval') {
                 $previousStatus = $claim->getOriginal('status');
@@ -103,6 +143,18 @@ class Claim extends Model
                     Notification::send($approvers, new NewClaimSubmitted($claim));
                 }
             }
+        });
+
+        static::deleted(function (Claim $claim) {
+            // Log audit trail for claim deletion
+            AuditLog::log(
+                Claim::class,
+                $claim->id,
+                'deleted',
+                $claim->toArray(),
+                [],
+                "Claim {$claim->claim_number} deleted by " . (auth()->user()->name ?? 'System')
+            );
         });
     }
 
