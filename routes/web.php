@@ -63,6 +63,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->middleware('role:hr_admin')
         ->name('settings');
 
+    // Audit Logs (HR Admin only)
+    Route::get('/audit-logs', \App\Livewire\Admin\AuditLogList::class)
+        ->middleware('role:hr_admin')
+        ->name('audit.logs');
+
     // Document viewing route
     Route::get('/documents/{document}/view', [App\Http\Controllers\DocumentController::class, 'view'])
         ->name('documents.view');
