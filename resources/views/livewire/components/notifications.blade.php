@@ -1,6 +1,6 @@
-<div class="relative" x-data="{ open: @entangle('showDropdown') }">
+<div class="relative" x-data="{ open: false }">
     <!-- Notification Bell -->
-    <button @click="$wire.toggleDropdown()"
+    <button @click="open = !open; if(open) $wire.loadNotifications()"
             class="relative p-2 text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500 rounded-lg">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

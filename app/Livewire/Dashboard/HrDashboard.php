@@ -118,6 +118,6 @@ class HrDashboard extends Component
             'currentMonthAmount' => $currentMonthAmount,
             'currentMonthHours' => $currentMonthHours,
             'actionRequired' => $actionRequired,
-        ])->layout('layouts.app-claim');
+        ])->layout('layouts.app');
     }
 }

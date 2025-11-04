@@ -6,7 +6,6 @@ use Livewire\Component;
 
 class Notifications extends Component
 {
-    public $showDropdown = false;
     public $notifications;
     public $unreadCount = 0;
 
@@ -26,15 +25,6 @@ class Notifications extends Component
         $this->unreadCount = auth()->user()
             ->unreadNotifications()
             ->count();
-    }
-
-    public function toggleDropdown()
-    {
-        $this->showDropdown = !$this->showDropdown;
-
-        if ($this->showDropdown) {
-            $this->loadNotifications();
-        }
     }
 
     public function markAsRead($notificationId)

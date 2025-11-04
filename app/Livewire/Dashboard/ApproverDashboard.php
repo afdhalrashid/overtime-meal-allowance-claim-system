@@ -99,6 +99,6 @@ class ApproverDashboard extends Component
             'totalPending' => $totalPending,
             'totalApprovedThisMonth' => $totalApprovedThisMonth,
             'totalOvertimeHoursThisMonth' => $totalOvertimeHoursThisMonth,
-        ])->layout('layouts.app-claim');
+        ])->layout('layouts.app');
     }
 }
