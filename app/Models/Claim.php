@@ -68,6 +68,19 @@ class Claim extends Model
 
     protected static function booted()
     {
+        static::created(function (Claim $claim) {
+            // Notify approvers when a new claim is submitted with pending_approval status
+            if ($claim->status === 'pending_approval') {
+                $approvers = User::where('role', 'approver')
+                    ->where('department_id', $claim->user->department_id)
+                    ->get();
+
+                if ($approvers->isNotEmpty()) {
+                    Notification::send($approvers, new NewClaimSubmitted($claim));
+                }
+            }
+        });
+
         static::updated(function (Claim $claim) {
             // Notify user when claim status changes from pending_approval
             if ($claim->isDirty('status') && $claim->getOriginal('status') === 'pending_approval') {

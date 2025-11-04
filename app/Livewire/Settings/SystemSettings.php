@@ -6,7 +6,7 @@ use Livewire\Component;
 use App\Models\SystemSetting;
 use Livewire\Attributes\Layout;
 
-#[Layout('layouts.app-claim')]
+#[Layout('layouts.app')]
 class SystemSettings extends Component
 {
     public $currency_symbol;

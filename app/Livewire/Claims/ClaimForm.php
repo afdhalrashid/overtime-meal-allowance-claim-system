@@ -366,6 +366,6 @@ class ClaimForm extends Component
 
     public function render()
     {
-        return view('livewire.claims.claim-form')->layout('layouts.app-claim');
+        return view('livewire.claims.claim-form')->layout('layouts.app');
     }
 }
