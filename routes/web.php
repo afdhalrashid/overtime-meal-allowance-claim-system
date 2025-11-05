@@ -68,6 +68,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->middleware('role:hr_admin')
         ->name('audit.logs');
 
+    // Reports routes
+    Route::get('/reports/hr', \App\Livewire\Reports\HrReports::class)
+        ->middleware('role:hr_admin')
+        ->name('reports.hr');
+
+    Route::get('/reports/payroll', \App\Livewire\Reports\PayrollReports::class)
+        ->middleware('role:payroll')
+        ->name('reports.payroll');
+
+    Route::get('/reports/approver', \App\Livewire\Reports\ApproverReports::class)
+        ->middleware('role:approver')
+        ->name('reports.approver');
+
     // Document viewing route
     Route::get('/documents/{document}/view', [App\Http\Controllers\DocumentController::class, 'view'])
         ->name('documents.view');
