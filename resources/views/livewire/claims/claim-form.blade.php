@@ -1,3 +1,7 @@
+@php
+    use Illuminate\Support\Facades\Auth;
+@endphp
+
 <div>
     <x-slot name="title">{{ $isEditing ? 'Edit Claim' : 'New Claim' }}</x-slot>
 
@@ -106,7 +110,43 @@
             <!-- Travel Information (Only for Out of Office) -->
             @if($work_type === 'out_of_office')
                 <div class="bg-white shadow rounded-lg p-6">
-                    <h3 class="text-lg font-medium text-gray-900 mb-6">Travel Information</h3>
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-medium text-gray-900">Travel Information</h3>
+                        <div class="flex items-center">
+                            @if(Auth::user()->involves_driving)
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 13.586l7.293-7.293a1 1 0 011.414 0z"/>
+                                    </svg>
+                                    Travel time included in overtime
+                                </span>
+                            @else
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                    </svg>
+                                    Travel time excluded from overtime
+                                </span>
+                            @endif
+                        </div>
+                    </div>
+
+                    @unless(Auth::user()->involves_driving)
+                        <div class="bg-amber-50 border-l-4 border-amber-400 p-4 mb-6">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <svg class="h-5 w-5 text-amber-400" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                    </svg>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm text-amber-700">
+                                        <strong>Note:</strong> Travel time will be automatically excluded from your overtime calculation since driving is not part of your job role. Only the actual work time (Start Time to End Time minus Travel Time) will be counted for overtime.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    @endunless
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <!-- Travel Start Time -->
@@ -168,6 +208,72 @@
             <!-- Calculation Summary -->
             <div class="bg-blue-50 border-l-4 border-blue-400 p-6 rounded-lg">
                 <h3 class="text-lg font-medium text-blue-900 mb-4">Calculation Summary</h3>
+
+                @if($work_type === 'out_of_office' && $travel_start_time && $travel_end_time && $start_time && $end_time)
+                    <!-- Detailed breakdown for out of office work -->
+                    <div class="mb-4 p-4 bg-white rounded-lg border border-blue-200">
+                        <h4 class="text-sm font-medium text-blue-900 mb-3">Calculation Breakdown</h4>
+                        <div class="space-y-2 text-sm">
+                            @php
+                                $totalWorkTime = 0;
+                                $travelTime = 0;
+                                $actualWorkTime = 0;
+
+                                if ($duty_date && $start_time && $end_time) {
+                                    $startTime = \Carbon\Carbon::parse($duty_date . ' ' . $start_time);
+                                    $endTime = \Carbon\Carbon::parse($duty_date . ' ' . $end_time);
+                                    if ($endTime->lt($startTime)) {
+                                        $endTime->addDay();
+                                    }
+                                    $totalWorkTime = $endTime->diffInHours($startTime, true);
+                                }
+
+                                if ($travel_start_time && $travel_end_time) {
+                                    $travelStart = \Carbon\Carbon::parse($duty_date . ' ' . $travel_start_time);
+                                    $travelEnd = \Carbon\Carbon::parse($duty_date . ' ' . $travel_end_time);
+                                    if ($travelEnd->lt($travelStart)) {
+                                        $travelEnd->addDay();
+                                    }
+                                    $travelTime = $travelEnd->diffInHours($travelStart, true);
+                                }
+
+                                if (!Auth::user()->involves_driving) {
+                                    $actualWorkTime = $totalWorkTime - $travelTime;
+                                } else {
+                                    $actualWorkTime = $totalWorkTime;
+                                }
+                            @endphp
+
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Total Time ({{ $start_time }} - {{ $end_time }}):</span>
+                                <span class="font-medium">{{ number_format($totalWorkTime, 1) }} hours</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Travel Time ({{ $travel_start_time }} - {{ $travel_end_time }}):</span>
+                                <span class="font-medium">{{ number_format($travelTime, 1) }} hours</span>
+                            </div>
+                            <div class="flex justify-between {{ Auth::user()->involves_driving ? 'text-green-600' : 'text-amber-600' }}">
+                                <span>Travel Time Treatment:</span>
+                                <span class="font-medium">
+                                    {{ Auth::user()->involves_driving ? 'Included (Driving role)' : 'Excluded (Non-driving role)' }}
+                                </span>
+                            </div>
+                            <div class="flex justify-between border-t border-blue-200 pt-2">
+                                <span class="text-gray-900 font-medium">Billable Work Time:</span>
+                                <span class="font-bold">{{ number_format($actualWorkTime, 1) }} hours</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Standard Hours:</span>
+                                <span class="font-medium">9.0 hours</span>
+                            </div>
+                            <div class="flex justify-between text-blue-900 font-bold border-t border-blue-200 pt-2">
+                                <span>Overtime Hours:</span>
+                                <span>{{ number_format(max(0, $actualWorkTime - 9), 1) }} hours</span>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div class="text-center">
                         <p class="text-2xl font-bold text-blue-900">{{ number_format($overtime_hours, 1) }}</p>

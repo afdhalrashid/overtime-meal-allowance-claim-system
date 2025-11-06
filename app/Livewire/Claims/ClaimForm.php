@@ -139,8 +139,9 @@ class ClaimForm extends Component
 
             $travelHours = $travelEnd->diffInHours($travelStart, true);
 
-            // Only subtract travel time if user doesn't involve driving
-            if (!auth()->user()->involves_driving) {
+            // Only subtract travel time if user doesn't involve driving AND system setting allows it
+            $excludeTravelTime = SystemSetting::get('exclude_travel_time_for_non_drivers', true);
+            if ($excludeTravelTime && !Auth::user()->involves_driving) {
                 $workHours -= $travelHours;
             }
         }

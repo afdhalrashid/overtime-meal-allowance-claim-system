@@ -68,6 +68,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->middleware('role:hr_admin')
         ->name('audit.logs');
 
+    // Public Holiday Management (HR Admin only)
+    Route::get('/admin/public-holidays', \App\Livewire\Admin\PublicHolidayManager::class)
+        ->middleware('role:hr_admin')
+        ->name('admin.public-holidays');
+
     // Reports routes
     Route::get('/reports/hr', \App\Livewire\Reports\HrReports::class)
         ->middleware('role:hr_admin')

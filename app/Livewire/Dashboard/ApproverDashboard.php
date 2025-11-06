@@ -25,8 +25,6 @@ class ApproverDashboard extends Component
             'approval_remarks' => $remarks,
         ]);
 
-        // TODO: Send notification to staff member and HR
-
         session()->flash('success', 'Claim approved successfully!');
     }
 
@@ -51,8 +49,6 @@ class ApproverDashboard extends Component
             'approved_at' => now(),
             'rejection_reason' => $reason,
         ]);
-
-        // TODO: Send notification to staff member
 
         session()->flash('success', 'Claim rejected.');
     }

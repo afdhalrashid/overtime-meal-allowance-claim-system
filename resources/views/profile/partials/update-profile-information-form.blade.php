@@ -47,6 +47,27 @@
             @endif
         </div>
 
+        <div>
+            <x-input-label for="phone" :value="__('Phone Number')" />
+            <x-text-input id="phone" name="phone" type="text" class="mt-1 block w-full" :value="old('phone', $user->phone)" autocomplete="tel" />
+            <x-input-error class="mt-2" :messages="$errors->get('phone')" />
+        </div>
+
+        <div>
+            <label for="involves_driving" class="flex items-center">
+                <input type="checkbox" id="involves_driving" name="involves_driving" value="1"
+                       {{ old('involves_driving', $user->involves_driving) ? 'checked' : '' }}
+                       class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                <span class="ml-2 block text-sm text-gray-900">
+                    Driving is part of my job role
+                </span>
+            </label>
+            <p class="text-xs text-gray-500 mt-1">
+                This affects how travel time is calculated in overtime claims. If checked, travel time will be included in overtime calculations.
+            </p>
+            <x-input-error class="mt-2" :messages="$errors->get('involves_driving')" />
+        </div>
+
         <div class="flex items-center gap-4">
             <x-primary-button>{{ __('Save') }}</x-primary-button>
 
