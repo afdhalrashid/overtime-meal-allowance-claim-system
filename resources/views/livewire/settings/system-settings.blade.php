@@ -138,6 +138,23 @@
                                 @error('meal_allowance_amount') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                                 <p class="text-xs text-gray-500 mt-1">Payable when working 2+ hours overtime past 7 PM</p>
                             </div>
+                        </div>
+
+                        <!-- Travel Time Policy -->
+                        <div class="bg-gray-50 p-6 rounded-lg">
+                            <h3 class="text-lg font-medium text-gray-900 mb-4">Travel Time Policy</h3>
+                            <div class="max-w-lg">
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="exclude_travel_time_for_non_drivers" wire:model="exclude_travel_time_for_non_drivers"
+                                           class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                    <label for="exclude_travel_time_for_non_drivers" class="ml-2 block text-sm text-gray-900">
+                                        Exclude travel time from overtime calculation for employees without driving role
+                                    </label>
+                                </div>
+                                @error('exclude_travel_time_for_non_drivers') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                                <p class="text-xs text-gray-500 mt-1">
+                                    When enabled, travel time will be subtracted from overtime hours for employees whose profile indicates that driving is NOT part of their job role.
+                                </p>
                             </div>
                         </div>
 

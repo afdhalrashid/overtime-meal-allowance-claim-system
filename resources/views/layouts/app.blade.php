@@ -81,6 +81,9 @@
                                             <x-dropdown-link :href="route('settings')">
                                                 {{ __('System Settings') }}
                                             </x-dropdown-link>
+                                            <x-dropdown-link :href="route('admin.public-holidays')">
+                                                {{ __('Public Holidays') }}
+                                            </x-dropdown-link>
                                             <x-dropdown-link :href="route('audit.logs')">
                                                 {{ __('Audit Logs') }}
                                             </x-dropdown-link>
