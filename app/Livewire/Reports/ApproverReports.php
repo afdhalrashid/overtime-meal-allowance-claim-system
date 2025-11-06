@@ -59,8 +59,88 @@ class ApproverReports extends Component
 
     public function exportApprovalData()
     {
-        // Placeholder for export functionality
-        session()->flash('message', 'Export functionality coming soon!');
+        $baseQuery = Claim::whereBetween('created_at', [$this->dateFrom, $this->dateTo]);
+
+        // Apply filters
+        if ($this->departmentFilter) {
+            $baseQuery->whereHas('user', function ($query) {
+                $query->where('department_id', $this->departmentFilter);
+            });
+        }
+
+        if ($this->statusFilter) {
+            $baseQuery->where('status', $this->statusFilter);
+        }
+
+        // Get claims with relationships
+        $claims = $baseQuery->with(['user', 'user.department'])->get();
+
+        // Prepare CSV data
+        $csvData = [];
+        $csvData[] = [
+            'Claim Number',
+            'Employee Name',
+            'Department',
+            'Duty Date',
+            'Work Type',
+            'Overtime Hours',
+            'Meal Allowance',
+            'Total Amount',
+            'Status',
+            'Submitted Date',
+            'Approved Date',
+            'Approved By',
+            'Processing Time (Hours)',
+            'Approval Remarks',
+            'Rejection Reason'
+        ];
+
+        foreach ($claims as $claim) {
+            $processingTime = '';
+            if ($claim->approved_at && $claim->created_at) {
+                $processingTime = Carbon::parse($claim->created_at)->diffInHours(Carbon::parse($claim->approved_at));
+            }
+
+            $approvedBy = '';
+            if ($claim->approved_by) {
+                $approver = User::find($claim->approved_by);
+                $approvedBy = $approver ? $approver->name : '';
+            }
+
+            $csvData[] = [
+                $claim->claim_number,
+                $claim->user->name,
+                $claim->user->department->name ?? 'N/A',
+                $claim->duty_date,
+                $claim->work_type,
+                $claim->overtime_hours ?? 0,
+                $claim->meal_allowance_amount ?? 0,
+                $claim->total_amount,
+                ucfirst($claim->status),
+                $claim->created_at->format('Y-m-d H:i:s'),
+                $claim->approved_at ? $claim->approved_at->format('Y-m-d H:i:s') : '',
+                $approvedBy,
+                $processingTime,
+                $claim->approval_remarks ?? '',
+                $claim->rejection_reason ?? ''
+            ];
+        }
+
+        // Generate CSV content
+        $csvContent = '';
+        foreach ($csvData as $row) {
+            $csvContent .= '"' . implode('","', $row) . '"' . "\n";
+        }
+
+        // Set headers for download
+        $fileName = 'approval_report_' . $this->dateFrom . '_to_' . $this->dateTo . '.csv';
+
+        return response()->streamDownload(function () use ($csvContent) {
+            echo $csvContent;
+        }, $fileName, [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+        ]);
     }
 
     public function render()
