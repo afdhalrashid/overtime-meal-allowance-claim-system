@@ -174,7 +174,102 @@ class HrReports extends Component
 
     public function exportData()
     {
-        // TODO: Implement CSV export functionality
-        session()->flash('success', 'Export functionality will be implemented soon.');
+        $baseQuery = Claim::whereBetween('created_at', [$this->dateFrom, $this->dateTo]);
+
+        // Apply filters
+        if ($this->departmentFilter) {
+            $baseQuery->whereHas('user', function ($query) {
+                $query->where('department_id', $this->departmentFilter);
+            });
+        }
+
+        if ($this->statusFilter) {
+            $baseQuery->where('status', $this->statusFilter);
+        }
+
+        // Get claims with relationships
+        $claims = $baseQuery->with(['user', 'user.department'])->get();
+
+        // Prepare CSV data
+        $csvData = [];
+        $csvData[] = [
+            'Claim Number',
+            'Employee Name',
+            'Department',
+            'Duty Date',
+            'Work Type',
+            'Overtime Hours',
+            'Meal Allowance',
+            'Total Amount',
+            'Status',
+            'Submitted Date',
+            'Approved Date',
+            'Processed Date',
+            'Paid Date',
+            'Approved By',
+            'Processed By',
+            'Paid By',
+            'Approval Remarks',
+            'Process Remarks',
+            'Rejection Reason'
+        ];
+
+        foreach ($claims as $claim) {
+            $approvedBy = '';
+            if ($claim->approved_by) {
+                $approver = User::find($claim->approved_by);
+                $approvedBy = $approver ? $approver->name : '';
+            }
+
+            $processedBy = '';
+            if ($claim->processed_by) {
+                $processor = User::find($claim->processed_by);
+                $processedBy = $processor ? $processor->name : '';
+            }
+
+            $paidBy = '';
+            if ($claim->paid_by) {
+                $payer = User::find($claim->paid_by);
+                $paidBy = $payer ? $payer->name : '';
+            }
+
+            $csvData[] = [
+                $claim->claim_number,
+                $claim->user->name,
+                $claim->user->department->name ?? 'N/A',
+                $claim->duty_date,
+                $claim->work_type,
+                $claim->overtime_hours ?? 0,
+                $claim->meal_allowance_amount ?? 0,
+                $claim->total_amount,
+                ucfirst($claim->status),
+                $claim->created_at->format('Y-m-d H:i:s'),
+                $claim->approved_at ? $claim->approved_at->format('Y-m-d H:i:s') : '',
+                $claim->processed_at ? $claim->processed_at->format('Y-m-d H:i:s') : '',
+                $claim->paid_at ? $claim->paid_at->format('Y-m-d H:i:s') : '',
+                $approvedBy,
+                $processedBy,
+                $paidBy,
+                $claim->approval_remarks ?? '',
+                $claim->process_remarks ?? '',
+                $claim->rejection_reason ?? ''
+            ];
+        }
+
+        // Generate CSV content
+        $csvContent = '';
+        foreach ($csvData as $row) {
+            $csvContent .= '"' . implode('","', $row) . '"' . "\n";
+        }
+
+        // Set headers for download
+        $fileName = 'hr_report_' . $this->dateFrom . '_to_' . $this->dateTo . '.csv';
+
+        return response()->streamDownload(function () use ($csvContent) {
+            echo $csvContent;
+        }, $fileName, [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+        ]);
     }
 }

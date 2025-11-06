@@ -178,7 +178,85 @@ class PayrollReports extends Component
 
     public function exportPayrollData()
     {
-        // TODO: Implement CSV export for payroll
-        session()->flash('success', 'Payroll export functionality will be implemented soon.');
+        $query = Claim::query()
+            ->with(['user.department'])
+            ->whereBetween('duty_date', [$this->dateFrom, $this->dateTo])
+            ->whereIn('status', ['processed', 'paid']);
+
+        if ($this->departmentFilter) {
+            $query->whereHas('user', function ($q) {
+                $q->where('department_id', $this->departmentFilter);
+            });
+        }
+
+        if ($this->statusFilter) {
+            $query->where('status', $this->statusFilter);
+        }
+
+        $claims = $query->get();
+
+        // Prepare CSV data
+        $csvData = [];
+        $csvData[] = [
+            'Claim Number',
+            'Employee Name',
+            'Department',
+            'Duty Date',
+            'Work Type',
+            'Overtime Hours',
+            'Meal Allowance',
+            'Total Amount',
+            'Status',
+            'Processed Date',
+            'Paid Date',
+            'Processed By',
+            'Paid By'
+        ];
+
+        foreach ($claims as $claim) {
+            $processedBy = '';
+            if ($claim->processed_by) {
+                $processor = User::find($claim->processed_by);
+                $processedBy = $processor ? $processor->name : '';
+            }
+
+            $paidBy = '';
+            if ($claim->paid_by) {
+                $payer = User::find($claim->paid_by);
+                $paidBy = $payer ? $payer->name : '';
+            }
+
+            $csvData[] = [
+                $claim->claim_number,
+                $claim->user->name,
+                $claim->user->department->name ?? 'N/A',
+                $claim->duty_date,
+                $claim->work_type,
+                $claim->overtime_hours ?? 0,
+                $claim->meal_allowance_amount ?? 0,
+                $claim->total_amount,
+                ucfirst($claim->status),
+                $claim->processed_at ? $claim->processed_at->format('Y-m-d H:i:s') : '',
+                $claim->paid_at ? $claim->paid_at->format('Y-m-d H:i:s') : '',
+                $processedBy,
+                $paidBy
+            ];
+        }
+
+        // Generate CSV content
+        $csvContent = '';
+        foreach ($csvData as $row) {
+            $csvContent .= '"' . implode('","', $row) . '"' . "\n";
+        }
+
+        // Set headers for download
+        $fileName = 'payroll_report_' . $this->dateFrom . '_to_' . $this->dateTo . '.csv';
+
+        return response()->streamDownload(function () use ($csvContent) {
+            echo $csvContent;
+        }, $fileName, [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+        ]);
     }
 }
